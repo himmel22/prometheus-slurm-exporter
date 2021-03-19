@@ -26,7 +26,7 @@ import (
 )
 
 func UsersData() []byte {
-        cmd := exec.Command("squeue","-a","-r","-h","-o %A|%u|%T|%C")
+        cmd := exec.Command("squeue","-a","-r","-h","-o %A|%u|%T|%C|%b|%m|%N")
         stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -45,6 +45,9 @@ type UserJobMetrics struct {
         pending float64
         running float64
         running_cpus float64
+        running_mem float64
+        running_gpus float64
+        nodes string
         suspended float64
 }
 
@@ -61,6 +64,10 @@ func ParseUsersMetrics(input []byte) map[string]*UserJobMetrics {
                         state := strings.Split(line,"|")[2]
                         state = strings.ToLower(state)
                         cpus,_ := strconv.ParseFloat(strings.Split(line,"|")[3],64)
+                        re_number := regexp.MustCompile("[0-9]+")
+                        gpus,_ := strconv.ParseFloat(re_number.FindString(strings.Split(line,"|")[4]),64)
+                        mem,_ := strconv.ParseFloat(re_number.FindString(strings.Split(line,"|")[5]),64)
+                        nodes := strings.Split(line,"|")[6]
                         pending := regexp.MustCompile(`^pending`)
                         running := regexp.MustCompile(`^running`)
                         suspended := regexp.MustCompile(`^suspended`)
@@ -70,6 +77,8 @@ func ParseUsersMetrics(input []byte) map[string]*UserJobMetrics {
                         case running.MatchString(state) == true:
                                 users[user].running++
                                 users[user].running_cpus += cpus
+                                users[user].running_gpus += cpus
+                                users[user].running_mem += mem
                         case suspended.MatchString(state) == true:
                                 users[user].suspended++
                         }
@@ -91,6 +100,9 @@ func NewUsersCollector() *UsersCollector {
                 pending: prometheus.NewDesc("slurm_user_jobs_pending", "Pending jobs for user", labels, nil), 
                 running: prometheus.NewDesc("slurm_user_jobs_running", "Running jobs for user", labels, nil),
                 running_cpus: prometheus.NewDesc("slurm_user_cpus_running", "Running cpus for user", labels, nil),
+                running_gpus: prometheus.NewDesc("slurm_user_cpus_running", "Running gpus for user", labels, nil),
+                running_mem: prometheus.NewDesc("slurm_user_cpus_running", "Running mem for user", labels, nil),
+                nodes: prometheus.NewDesc("slurm_user_cpus_running", "Running nodes for user", labels, nil),
                 suspended: prometheus.NewDesc("slurm_user_jobs_suspended", "Suspended jobs for user", labels, nil),
         }
 }
