@@ -38,7 +38,7 @@ func init() {
 
 var listenAddress = flag.String(
 	"listen-address",
-	":8088",
+	":8080",
 	"The address to listen on for HTTP requests.")
 
 func main() {
