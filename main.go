@@ -17,10 +17,11 @@ package main
 
 import (
 	"flag"
+	"net/http"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
-	"net/http"
 )
 
 func init() {
@@ -34,6 +35,7 @@ func init() {
 	prometheus.MustRegister(NewSchedulerCollector())      // from scheduler.go
 	prometheus.MustRegister(NewFairShareCollector())      // from sshare.go
 	prometheus.MustRegister(NewUsersCollector())          // from users.go
+	prometheus.MustRegister(NewJobsCollector())          // from jobs.go
 }
 
 var listenAddress = flag.String(
